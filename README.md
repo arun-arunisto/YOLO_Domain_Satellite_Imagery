@@ -1,141 +1,195 @@
-# **YOLO Domain Satellite Imagery**
+---
+
+# **YOLO Domain – Satellite Imagery (DOTA)**
 
 <p align="center">
-  <img src="https://img.shields.io/badge/YOLO-v9%20%7C%20v10-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/YOLO-v8%20%7C%20v9%20%7C%20v10-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/Python-3.10+-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Ultralytics-Latest-orange?style=flat-square" />
+  <img src="https://img.shields.io/badge/Dataset-DOTA-red?style=flat-square" />
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" />
   <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square" />
 </p>
 
 ---
 
-This repository contains the full training pipeline for building a **high-quality YOLO-based object detection model** using the **xView Satellite Imagery Dataset**.
+This repository provides a **complete, end-to-end preprocessing and training pipeline** for building **YOLO-based object detection models** on **high-resolution satellite imagery**, using the **DOTA (Dataset for Object Detection in Aerial Images)** dataset.
 
-The objective is simple:
-Build a **strong domain-specific model** optimized for satellite/aerial imagery under the YOLO Domain Hub initiative.
+The objective is simple and strict:
+
+> **Build a clean, reproducible, domain-specific YOLO model for satellite / aerial imagery.**
+
+This work is part of the **YOLO Domain Hub initiative**, focusing on **correct geometry, scalable preprocessing, and reliable benchmarking**.
 
 ---
 
 ## 🚀 Overview
 
-Satellite imagery has its own set of challenges:
+Satellite and aerial imagery introduce challenges that generic datasets do not:
 
-* Very small, dense objects
-* Huge scale variation
-* Rotated and oblique structures
-* Heavily cluttered backgrounds
-* Large image resolutions
+* Extremely large images (3k–6k resolution)
+* Tiny, dense objects
+* Large-scale variation
+* Heavy background clutter
+* Oriented objects (OBB annotations)
 
-This project is dedicated to producing a **robust YOLO model** tailored specifically for these challenges.
-
----
-
-## 📦 Dataset: xView
-
-The xView dataset includes:
-
-* **1,000,000+ object annotations**
-* **60 classes**
-* **0.3 m resolution** satellite scenes
-* Urban, rural, maritime, industrial environments
-
-Download the following files manually from the xView dataset page:
-
-```
-training_images
-validation_images
-training_labels (GeoJSON)
-```
-
-Dataset link: [https://challenge.xviewdataset.org](https://challenge.xviewdataset.org)
+This repository addresses these challenges by enforcing a **strict preprocessing pipeline** *before* training YOLO models.
 
 ---
 
-## 🔧 Label Conversion: GeoJSON → YOLO
+## 📦 Dataset: DOTA (v1.0)
 
-xView labels are polygonal GeoJSON annotations, which are **not YOLO-ready**.
+**DOTA (Dataset for Object Detection in Aerial Images)** provides:
 
-This repo includes a conversion script that:
+* High-resolution aerial images
+* Oriented bounding box (OBB) annotations
+* 15 object categories
+* Diverse scenes (urban, ports, airports, industrial zones)
 
-* Parses polygon coordinates
-* Converts polygons → bounding boxes
-* Normalizes coordinates
-* Generates YOLO-formatted `.txt` labels
+Official dataset page:
 
-Expected YOLO-ready structure:
+```
+https://captain-whu.github.io/DOTA/
+```
+
+This repository currently supports **DOTA v1.0**.
+
+---
+
+## 🔁 Data Processing Pipeline
+
+DOTA annotations are **not YOLO-compatible**.
+This repository converts them through a **multi-stage, geometry-safe pipeline**.
+
+---
+
+### 1️⃣ DOTA → YOLO Label Conversion
+
+* Converts OBB (4-point polygons) → HBB (horizontal bounding boxes)
+* Preserves floating-point precision
+* Drops difficult objects (configurable)
+* Outputs standard YOLO format
+
+YOLO label format:
+
+```
+<class_id> <x_center> <y_center> <width> <height>
+```
+
+---
+
+### 2️⃣ Image Tiling (Mandatory)
+
+DOTA images are extremely large and **cannot be trained directly**.
+
+Tiling parameters:
+
+* Tile size: **1024 × 1024**
+* Overlap: **200 px**
+* Bounding boxes are clipped and adjusted per tile
+* Very small boxes are filtered to reduce noise
+
+This step is **non-optional** for DOTA-scale imagery.
+
+---
+
+### 3️⃣ Train / Validation Split
+
+* Split is performed **after tiling**
+* Deterministic (seeded)
+* Ensures image–label alignment
+* Produces YOLO-compatible directory layout
+
+Final dataset structure:
 
 ```
 dataset/
- ├── images/
- │     ├── train/
- │     └── val/
- ├── labels/
- │     ├── train/
- │     └── val/
- └── data.yaml
+└── tiles_split/
+    ├── images/
+    │   ├── train/
+    │   └── val/
+    └── labels/
+        ├── train/
+        └── val/
 ```
+
+---
+
+### 4️⃣ Visual Sanity Checking
+
+Before training, labels are **visually inspected**:
+
+* Bounding boxes are drawn on images
+* Checked before and after tiling
+* Prevents silent geometry errors
+
+This step ensures **training correctness before GPU time is spent**.
+
+---
+
+## 🧠 Processing Philosophy (Important)
+
+* ❌ No resizing full images before tiling
+
+* ❌ No mixing DOTA and YOLO labels
+
+* ❌ No training without visual checks
+
+* ✅ Convert → tile → split → verify → train
+
+* ✅ Skip invalid data aggressively
+
+* ✅ Protect valid annotations
 
 ---
 
 ## 🏗️ Training Pipeline
 
-Start with a basic model:
+Baseline YOLO training example:
 
 ```bash
 yolo detect train \
-  model=yolov9s.pt \
+  model=yolov8s.pt \
   data=data.yaml \
-  epochs=100 \
-  imgsz=640
+  imgsz=640 \
+  epochs=100
 ```
 
-Then iterate using:
+Experiments are conducted across:
 
-### ✔ YOLO versions
+### ✔ YOLO Versions
 
 * YOLOv8
 * YOLOv9
 * YOLOv10
 
-### ✔ Model sizes
+### ✔ Model Sizes
 
-(n, s, m, l, x)
+* n / s / m / l / x
 
-### ✔ Hyperparameters
+### ✔ Training Parameters
 
-* Learning rate
-* Batch size
-* Augmentations
-* Epochs
 * Image size
+* Batch size
+* Epochs
+* Augmentations
 
-The purpose is to push for the **best-performing satellite imagery model**.
+The goal is **clean benchmarking**, not leaderboard chasing.
 
 ---
 
-## 📊 Performance Evaluation
+## 📊 Evaluation Metrics
 
-Evaluate your trained model:
+For every trained model, the following are recorded:
 
-```bash
-yolo detect val \
-  model=best.pt \
-  data=data.yaml \
-  imgsz=640
-```
-
-Record the following metrics:
-
-* **mAP50–95**
+* **mAP50–95** (primary metric)
 * **mAP50**
 * **Precision**
 * **Recall**
 * **Per-class performance**
-* **Model size + version used**
-* **Training parameters**
+* **Model size & YOLO version**
+* **Training configuration**
 
-This ensures reproducible benchmarking.
+This ensures **reproducible and comparable results**.
 
 ---
 
@@ -143,11 +197,25 @@ This ensures reproducible benchmarking.
 
 ```
 YOLO Domain Satellite Imagery/
-├── data/                # data.yaml and class names
-├── scripts/             # conversion and utility scripts
-├── dataset/             # YOLO-ready dataset after conversion
-├── models/              # trained model weights/checkpoints
-├── notebooks/           # experiments and evaluation notebooks
+├── data/                     # dataset.yaml, class mappings
+├── dataset/                  # processed YOLO-ready dataset
+│
+├── scripts/
+│   ├── dota/                 # Core DOTA processing modules
+│   │   ├── __init__.py
+│   │   ├── classes.py        # DOTA class definitions
+│   │   ├── converter.py      # DOTA → YOLO conversion logic
+│   │   ├── datastats.py      # Dataset statistics & analysis
+│   │   ├── tiler.py          # Image tiling logic
+│   │   └── visualizer.py     # Visual sanity checker
+│   │
+│   ├── converter_dota.py     # Conversion runner
+│   ├── datastats_dota.py     # Statistics runner
+│   ├── tiler_dota.py         # Tiling runner
+│   └── visualizer_dota.py    # Visualization runner
+│
+├── models/                   # Trained model weights
+├── notebooks/                # Experiments & analysis
 └── README.md
 ```
 
@@ -155,16 +223,14 @@ YOLO Domain Satellite Imagery/
 
 ## ⚙️ Environment Setup
 
-Install dependencies:
+Core dependencies:
 
 ```bash
 pip install ultralytics
-pip install pillow
-pip install shapely
-pip install numpy
+pip install numpy pillow opencv-python
 ```
 
-Optional but recommended:
+Recommended utilities:
 
 ```bash
 pip install matplotlib tqdm
@@ -174,13 +240,32 @@ pip install matplotlib tqdm
 
 ## 📜 License
 
-This project uses:
+* **Code**: MIT License
+* **Dataset**: DOTA License (dataset usage restrictions apply)
+* **Training Framework**: Ultralytics YOLO License
 
-* **MIT License** for code
-* **xView dataset license** (dataset usage restrictions apply)
-* **Ultralytics YOLO license** (for training framework)
-
-This repository is intended for open-source research and model development.
+This repository is intended for **open-source research and reproducible model development**.
 
 ---
 
+## 🧭 Project Status
+
+* ✅ DOTA → YOLO conversion
+* ✅ Image tiling
+* ✅ Train/val split
+* ✅ Visual sanity checks
+* ⏳ Baseline YOLO training
+* ⏳ Benchmarking & reporting
+
+---
+
+## 🧩 YOLO Domain Hub Alignment
+
+This repository is designed to integrate cleanly into the **YOLO Domain Hub**:
+
+* Clear dataset preprocessing
+* Reproducible metrics
+* Transparent training setup
+* Domain-specific focus
+
+---
