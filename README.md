@@ -1,5 +1,3 @@
----
-
 # **YOLO Domain – Satellite Imagery (DOTA)**
 
 <p align="center">
