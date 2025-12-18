@@ -195,6 +195,7 @@ This ensures **reproducible and comparable results**.
 
 ```
 YOLO Domain Satellite Imagery/
+├── LICENSE                   # MIT-License
 ├── data/                     # dataset.yaml, class mappings
 ├── dataset/                  # processed YOLO-ready dataset
 │
