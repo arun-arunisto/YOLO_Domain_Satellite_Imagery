@@ -147,7 +147,7 @@ Baseline YOLO training example:
 ```bash
 yolo detect train \
   model=yolov8s.pt \
-  data=data.yaml \
+  data=dataset.yaml \
   imgsz=640 \
   epochs=100
 ```
