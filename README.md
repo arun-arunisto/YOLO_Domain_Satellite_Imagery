@@ -224,6 +224,7 @@ YOLO Domain Satellite Imagery/
 │
 ├── models/                   # Trained model weights
 ├── notebooks/                # Experiments & analysis
+├── requirements.txt          # requirements for the project
 └── README.md
 ```
 
