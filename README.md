@@ -208,6 +208,14 @@ YOLO Domain Satellite Imagery/
 │   │   ├── tiler.py          # Image tiling logic
 │   │   └── visualizer.py     # Visual sanity checker
 │   │
+│   ├── train/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── trainer.py
+│   │   ├── evaluator.py
+│   │   └── utils.py
+│   │
+│   ├── train_dota.py         # Conversion runner
 │   ├── converter_dota.py     # Conversion runner
 │   ├── datastats_dota.py     # Statistics runner
 │   ├── tiler_dota.py         # Tiling runner
