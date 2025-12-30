@@ -215,7 +215,8 @@ YOLO Domain Satellite Imagery/
 │   │   ├── evaluator.py
 │   │   └── utils.py
 │   │
-│   ├── train_dota.py         # Conversion runner
+│   ├── train_dota.py         # yolo training
+│   ├── eval_dota.py          # trained models evaluating
 │   ├── converter_dota.py     # Conversion runner
 │   ├── datastats_dota.py     # Statistics runner
 │   ├── tiler_dota.py         # Tiling runner
